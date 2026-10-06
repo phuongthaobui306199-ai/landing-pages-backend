@@ -1,14 +1,13 @@
 const express = require('express');
-const sqlite3 = require('sqlite3').verbose();
+const { createClient } = require('@supabase/supabase-js');
 const cors = require('cors');
 const bodyParser = require('body-parser');
-const QRCode = require('qrcode');
 const path = require('path');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Middleware - CORS Configuration
+// CORS Configuration
 app.use(cors({
   origin: ['http://localhost:8000', 'http://localhost:3000', 'https://hannah369.phuongthaobui306199.workers.dev', 'https://landing-pages-backend-fawn.vercel.app'],
   credentials: true,
@@ -19,49 +18,42 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static('public'));
 
-// Database setup
-const db = new sqlite3.Database('./submissions.db', (err) => {
-  if (err) console.error('Database error:', err);
-  else console.log('Connected to SQLite database');
-});
+// Supabase Setup
+const SUPABASE_URL = 'https://cfuiahrrebttellltcgs.supabase.co';
+const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNmdWlhaHJyZWJ0dGVsbGx0Y2dzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzI2NDEzNzksImV4cCI6MjA0ODIxNzM3OX0.4rH8Zp2Y3wF7xK9mL6qR5sT2uV8aB1cD4eF9gH2jK3';
+const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-// Create table if not exists
-db.run(`
-  CREATE TABLE IF NOT EXISTS submissions (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    name TEXT NOT NULL,
-    phone TEXT NOT NULL,
-    email TEXT,
-    industry TEXT,
-    goal TEXT,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-  )
-`);
+console.log('✅ Connected to Supabase');
 
 // API: Submit form
-app.post('/api/submit-form', (req, res) => {
+app.post('/api/submit-form', async (req, res) => {
   const { name, phone, email, industry, goal } = req.body;
 
   if (!name || !phone) {
     return res.status(400).json({ error: 'Name and phone required' });
   }
 
-  db.run(
-    'INSERT INTO submissions (name, phone, email, industry, goal) VALUES (?, ?, ?, ?, ?)',
-    [name, phone, email || '', industry || '', goal || ''],
-    function(err) {
-      if (err) {
-        console.error('Insert error:', err);
-        return res.status(500).json({ error: 'Database error' });
-      }
-      res.json({
-        success: true,
-        message: 'Form submitted successfully',
-        submissionId: this.lastID,
-        qrUrl: `/api/qr?name=${encodeURIComponent(name)}&phone=${phone}`
-      });
+  try {
+    const { data, error } = await supabase
+      .from('submissions')
+      .insert([{ name, phone, email: email || '', industry: industry || '', goal: goal || '' }])
+      .select();
+
+    if (error) {
+      console.error('Supabase error:', error);
+      return res.status(500).json({ error: 'Database error: ' + error.message });
     }
-  );
+
+    res.json({
+      success: true,
+      message: 'Form submitted successfully',
+      submissionId: data[0]?.id,
+      qrUrl: `/api/qr?name=${encodeURIComponent(name)}&phone=${phone}`
+    });
+  } catch (err) {
+    console.error('Error:', err);
+    res.status(500).json({ error: 'Server error' });
+  }
 });
 
 // API: Generate QR code for payment
@@ -73,10 +65,7 @@ app.get('/api/qr', async (req, res) => {
   }
 
   try {
-    // QR content format: name + phone (e.g., "Thao0378637269")
     const content = `${name}${phone}`;
-
-    // Generate QR using sepay format
     const qrUrl = `https://qr.sepay.vn/img?acc=9378637269&bank=970436&amount=100000&des=${encodeURIComponent(content)}`;
 
     res.json({
@@ -94,28 +83,32 @@ app.get('/api/qr', async (req, res) => {
 });
 
 // API: Get all submissions (admin)
-app.get('/api/submissions', (req, res) => {
+app.get('/api/submissions', async (req, res) => {
   const { password } = req.query;
 
-  // Simple password check
   if (password !== '1999') {
     return res.status(403).json({ error: 'Unauthorized' });
   }
 
-  db.all(
-    'SELECT * FROM submissions ORDER BY created_at DESC',
-    (err, rows) => {
-      if (err) {
-        console.error('Query error:', err);
-        return res.status(500).json({ error: 'Database error' });
-      }
-      res.json({ submissions: rows || [] });
+  try {
+    const { data, error } = await supabase
+      .from('submissions')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('Query error:', error);
+      return res.status(500).json({ error: 'Database error' });
     }
-  );
+    res.json({ submissions: data || [] });
+  } catch (err) {
+    console.error('Error:', err);
+    res.status(500).json({ error: 'Server error' });
+  }
 });
 
 // API: Delete submission (admin)
-app.delete('/api/submissions/:id', (req, res) => {
+app.delete('/api/submissions/:id', async (req, res) => {
   const { password } = req.query;
   const { id } = req.params;
 
@@ -123,16 +116,20 @@ app.delete('/api/submissions/:id', (req, res) => {
     return res.status(403).json({ error: 'Unauthorized' });
   }
 
-  db.run(
-    'DELETE FROM submissions WHERE id = ?',
-    [id],
-    function(err) {
-      if (err) {
-        return res.status(500).json({ error: 'Delete error' });
-      }
-      res.json({ success: true, message: 'Deleted' });
+  try {
+    const { error } = await supabase
+      .from('submissions')
+      .delete()
+      .eq('id', id);
+
+    if (error) {
+      return res.status(500).json({ error: 'Delete error' });
     }
-  );
+    res.json({ success: true, message: 'Deleted' });
+  } catch (err) {
+    console.error('Error:', err);
+    res.status(500).json({ error: 'Server error' });
+  }
 });
 
 // Serve admin dashboard
@@ -158,9 +155,6 @@ app.listen(PORT, () => {
 });
 
 process.on('SIGINT', () => {
-  db.close((err) => {
-    if (err) console.error('Database close error:', err);
-    else console.log('Database closed');
-    process.exit(0);
-  });
+  console.log('Server shutting down');
+  process.exit(0);
 });
