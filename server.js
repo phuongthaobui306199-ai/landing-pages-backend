@@ -135,6 +135,11 @@ app.get('/admin', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'admin.html'));
 });
 
+// Serve form submission page
+app.get('/form', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'form-submission.html'));
+});
+
 // Health check
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date() });

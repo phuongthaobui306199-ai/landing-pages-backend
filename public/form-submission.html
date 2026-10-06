@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Form Đăng ký - Hannah VSTEP</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Be Vietnam Pro", system-ui, sans-serif;
+      background: #f5ede3;
+      padding: 20px;
+    }
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+    }
+    .form-wrapper {
+      background: white;
+      border-radius: 16px;
+      padding: 40px;
+      box-shadow: 0 24px 60px rgba(26, 22, 20, 0.15);
+    }
+    h1 {
+      font-family: "Playfair Display", serif;
+      color: #a3252b;
+      font-size: 32px;
+      margin-top: 0;
+      margin-bottom: 10px;
+    }
+    .subtitle {
+      color: #6b605a;
+      font-size: 16px;
+      margin-bottom: 30px;
+    }
+    .form-group {
+      margin-bottom: 20px;
+    }
+    label {
+      display: block;
+      font-weight: 600;
+      font-size: 14px;
+      margin-bottom: 8px;
+      color: #1a1614;
+    }
+    label span {
+      color: #a3252b;
+      margin-left: 2px;
+    }
+    input, select {
+      width: 100%;
+      padding: 13px 14px;
+      border: 1.5px solid #e0d4c7;
+      border-radius: 8px;
+      font-family: inherit;
+      font-size: 15px;
+      transition: all 0.2s;
+    }
+    input::placeholder {
+      color: #a39b91;
+    }
+    input:hover, select:hover {
+      border-color: #d4c9bc;
+    }
+    input:focus, select:focus {
+      outline: none;
+      border-color: #a3252b;
+      box-shadow: 0 0 0 3px rgba(163, 37, 43, 0.1);
+      background: #fafaf8;
+    }
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+    @media (max-width: 600px) {
+      .form-row {
+        grid-template-columns: 1fr;
+      }
+      .form-wrapper {
+        padding: 20px;
+      }
+      h1 {
+        font-size: 24px;
+      }
+    }
+    .btn {
+      width: 100%;
+      padding: 16px;
+      border: none;
+      border-radius: 8px;
+      background: #a3252b;
+      color: white;
+      font-weight: 600;
+      font-size: 15px;
+      cursor: pointer;
+      transition: all 0.2s;
+      margin-top: 20px;
+    }
+    .btn:hover {
+      background: #7d1b20;
+      transform: translateY(-1px);
+      box-shadow: 0 12px 32px rgba(163, 37, 43, 0.15);
+    }
+    .btn:active {
+      transform: translateY(0);
+    }
+    .btn:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+      transform: none;
+    }
+    .status {
+      margin-top: 20px;
+      padding: 12px;
+      border-radius: 8px;
+      text-align: center;
+      font-size: 14px;
+      display: none;
+    }
+    .status.success {
+      background: #d4edda;
+      color: #155724;
+      border: 1px solid #c3e6cb;
+      display: block;
+    }
+    .status.error {
+      background: #f8d7da;
+      color: #721c24;
+      border: 1px solid #f5c6cb;
+      display: block;
+    }
+    .status.loading {
+      background: #e7f3ff;
+      color: #004085;
+      border: 1px solid #b8daff;
+      display: block;
+    }
+    /* QR Display */
+    .qr-section {
+      display: none;
+      text-align: center;
+      margin-top: 30px;
+      padding-top: 30px;
+      border-top: 2px solid #e0d4c7;
+    }
+    .qr-section.show {
+      display: block;
+    }
+    .qr-section h2 {
+      font-family: "Playfair Display", serif;
+      color: #a3252b;
+      font-size: 24px;
+      margin-top: 0;
+      margin-bottom: 20px;
+    }
+    .qr-container {
+      background: #f9f9f9;
+      padding: 30px;
+      border-radius: 12px;
+      margin-bottom: 20px;
+    }
+    .qr-container img {
+      max-width: 300px;
+      width: 100%;
+      height: auto;
+      border-radius: 8px;
+    }
+    .qr-info {
+      background: #fffcf8;
+      padding: 20px;
+      border-radius: 8px;
+      margin-top: 20px;
+      text-align: left;
+    }
+    .qr-info-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 10px 0;
+      border-bottom: 1px solid #e0d4c7;
+      font-size: 14px;
+    }
+    .qr-info-row:last-child {
+      border-bottom: none;
+    }
+    .qr-info-label {
+      font-weight: 600;
+      color: #1a1614;
+    }
+    .qr-info-value {
+      color: #6b605a;
+      font-family: monospace;
+      font-weight: 600;
+    }
+    .btn-reset {
+      background: #6b605a;
+      margin-top: 10px;
+    }
+    .btn-reset:hover {
+      background: #4a4440;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="form-wrapper">
+      <h1>Đăng ký chương trình VSTEP</h1>
+      <p class="subtitle">Hãy để lại thông tin để nhận tư vấn chương trình phù hợp</p>
+
+      <form id="submissionForm" onsubmit="handleSubmit(event)">
+        <div class="form-row">
+          <div class="form-group">
+            <label>Họ và tên <span>*</span></label>
+            <input type="text" name="name" id="name" placeholder="Nguyễn Minh Anh" required>
+          </div>
+          <div class="form-group">
+            <label>Số điện thoại <span>*</span></label>
+            <input type="tel" name="phone" id="phone" placeholder="09xx xxx xxx" required>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Email</label>
+            <input type="email" name="email" id="email" placeholder="anh@example.com">
+          </div>
+          <div class="form-group">
+            <label>Lĩnh vực kinh doanh</label>
+            <select name="industry" id="industry">
+              <option value="">Chọn lĩnh vực</option>
+              <option>Bán lẻ / Thương mại</option>
+              <option>Dịch vụ</option>
+              <option>Giáo dục</option>
+              <option>F&B</option>
+              <option>Sản xuất</option>
+              <option>Khác</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Điều bạn muốn cải thiện nhất? <span>*</span></label>
+          <select name="goal" id="goal" required>
+            <option value="">Chọn một mục tiêu</option>
+            <option>Tạo nội dung đều đặn hơn</option>
+            <option>Tìm hiểu khách hàng</option>
+            <option>Thu và chăm sóc lead</option>
+            <option>Xây quy trình cho đội ngũ</option>
+            <option>Chưa rõ, cần được tư vấn</option>
+          </select>
+        </div>
+
+        <button type="submit" class="btn" id="submitBtn">Gửi đăng ký</button>
+        <div class="status" id="status"></div>
+      </form>
+
+      <!-- QR Payment Section -->
+      <div class="qr-section" id="qrSection">
+        <h2>🎟️ QR Code Thanh Toán</h2>
+        <p style="color: #6b605a; margin-top: 0;">Quét mã QR bên dưới để hoàn tất thanh toán tư vấn</p>
+
+        <div class="qr-container">
+          <img id="qrImage" src="" alt="QR Code thanh toán">
+        </div>
+
+        <div class="qr-info">
+          <div class="qr-info-row">
+            <span class="qr-info-label">🏦 Ngân hàng:</span>
+            <span class="qr-info-value">Vietcombank</span>
+          </div>
+          <div class="qr-info-row">
+            <span class="qr-info-label">💳 Số tài khoản:</span>
+            <span class="qr-info-value">9378637269</span>
+          </div>
+          <div class="qr-info-row">
+            <span class="qr-info-label">💰 Số tiền:</span>
+            <span class="qr-info-value">100,000 VND</span>
+          </div>
+          <div class="qr-info-row">
+            <span class="qr-info-label">📝 Nội dung:</span>
+            <span class="qr-info-value" id="qrContent">--</span>
+          </div>
+        </div>
+
+        <button class="btn btn-reset" onclick="resetForm()">← Điền lại thông tin</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Backend API URL - THAY ĐỔI THEO URL VERCEL CỦA BẠN
+    const API_URL = 'http://localhost:3000'; // Local dev
+    // const API_URL = 'https://landing-pages-backend.vercel.app'; // Production
+
+    async function handleSubmit(event) {
+      event.preventDefault();
+
+      const submitBtn = document.getElementById('submitBtn');
+      const status = document.getElementById('status');
+      const formData = {
+        name: document.getElementById('name').value,
+        phone: document.getElementById('phone').value,
+        email: document.getElementById('email').value,
+        industry: document.getElementById('industry').value,
+        goal: document.getElementById('goal').value
+      };
+
+      // Validate
+      if (!formData.name || !formData.phone) {
+        status.className = 'status error';
+        status.textContent = 'Vui lòng điền đủ thông tin bắt buộc';
+        return;
+      }
+
+      // Show loading
+      submitBtn.disabled = true;
+      status.className = 'status loading';
+      status.textContent = 'Đang xử lý...';
+
+      try {
+        // Submit form
+        const submitRes = await fetch(`${API_URL}/api/submit-form`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(formData)
+        });
+        const submitData = await submitRes.json();
+
+        if (!submitData.success) {
+          throw new Error(submitData.error || 'Error submitting form');
+        }
+
+        // Get QR code
+        const qrRes = await fetch(
+          `${API_URL}/api/qr?name=${encodeURIComponent(formData.name)}&phone=${formData.phone}`
+        );
+        const qrData = await qrRes.json();
+
+        if (!qrData.success) {
+          throw new Error('Error generating QR code');
+        }
+
+        // Show success and QR
+        status.className = 'status success';
+        status.textContent = '✅ Bạn đã đăng ký thành công! Thanh toán để hoàn tất.';
+
+        document.getElementById('qrImage').src = qrData.qrUrl;
+        document.getElementById('qrContent').textContent = qrData.description;
+        document.getElementById('qrSection').classList.add('show');
+        document.getElementById('submissionForm').style.display = 'none';
+
+      } catch (err) {
+        console.error('Error:', err);
+        status.className = 'status error';
+        status.textContent = 'Lỗi: ' + err.message + '. Hãy thử lại hoặc liên hệ hỗ trợ.';
+        submitBtn.disabled = false;
+      }
+    }
+
+    function resetForm() {
+      document.getElementById('submissionForm').reset();
+      document.getElementById('submissionForm').style.display = 'block';
+      document.getElementById('qrSection').classList.remove('show');
+      document.getElementById('status').className = 'status';
+      document.getElementById('submitBtn').disabled = false;
+    }
+  </script>
+</body>
+</html>
