@@ -8,8 +8,13 @@ const path = require('path');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Middleware
-app.use(cors());
+// Middleware - CORS Configuration
+app.use(cors({
+  origin: ['http://localhost:8000', 'http://localhost:3000', 'https://hannah369.phuongthaobui306199.workers.dev', 'https://landing-pages-backend-fawn.vercel.app'],
+  credentials: true,
+  methods: ['GET', 'POST', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static('public'));
